@@ -1,0 +1,179 @@
+#include <Servo.h>                      // Include servo library
+Servo servoLeft;
+Servo servoRight;  
+
+const int midIRPin=6, midReceiverPin=7;  
+const int midLedPin = A1;              
+const int leftIRPin=10, leftReceiverPin=11;
+const int leftLedPin = A2;
+const int rightIRPin = 2, rightReceiverPin = 3;
+const int rightLedPin = A0;
+
+int leftDistance;
+int rightDistance;  
+int midDistance;    
+
+
+
+
+void setup() {
+  Serial.begin(9600);
+  servoLeft.attach(13);              
+  servoRight.attach(12);
+  pinMode(leftReceiverPin, INPUT);          
+  pinMode(leftIRPin, OUTPUT);              
+  pinMode(leftLedPin, OUTPUT);
+  pinMode(midReceiverPin, INPUT);          
+  pinMode(midIRPin, OUTPUT);              
+  pinMode(midLedPin, OUTPUT);
+  pinMode(rightReceiverPin, INPUT);          
+  pinMode(rightIRPin, OUTPUT);              
+  pinMode(rightLedPin, OUTPUT);
+}
+
+void loop() {
+int midDetected = irDetect(midIRPin, midReceiverPin, 38000);
+int leftDetected = irDetect(leftIRPin, leftReceiverPin, 38000);
+int rightDetected = irDetect(rightIRPin, rightReceiverPin, 38000);
+
+
+Serial.print("Middle Distance: ");
+int midDistance =irDistance(midIRPin, midReceiverPin);
+Serial.print(midDistance);
+
+Serial.print("Left Distance: ");
+int leftDistance =  irDistance(leftIRPin, leftReceiverPin);
+Serial.println(leftDistance);
+
+Serial.print("Right Distance: ");
+int rightDistance = irDistance(rightIRPin, rightReceiverPin);
+Serial.println(rightDistance);
+
+forward();
+
+// slight adjustements while moving down hall
+
+if(rightDistance <=1){
+  slightLeft();
+}
+if(leftDistance <=1){
+  slightRight();
+}
+
+// come to a wall facing onwards
+if(midDistance <=4){
+  //the end when its trapped and needs to turn around
+  //if(leftDistance <=2 && rightDistance <=2){
+  //  turn_around();
+  //}
+  if(leftDistance <=2){
+    if (rightDistance <= 2){
+      turn_around();
+    }
+    // theres a wall on the left and needs to turn right
+    right();
+    slightForward();
+    right();
+  }
+  else if(rightDistance <=2){
+    if (leftDistance <= 2){
+      turn_around();
+    }
+    // theres a wall on the right and needs to turn left
+    left();
+    slightForward();
+    left();
+  }
+  else{
+    // unknown circumstances
+    stop();
+  }
+}
+}
+
+//detection functions
+
+
+int irDetect(int irLedPin,int irReceiverPin, long frequency)
+{
+  tone(irLedPin, frequency);                 // Turn on the IR LED square wave
+  delay(1);                                  // Wait 1 ms
+  noTone(irLedPin);                          // Turn off the IR LED
+  int ir = digitalRead(irReceiverPin);       // IR receiver -> ir variable
+  delay(1);                                  // Down time before recheck
+  return ir;                                 // Return 0 detect, 1 no detect
+}
+
+int irDistance(int irLedPin, int irReceiverPin)
+{
+   int distance = 0;
+   for(long f = 38000; f <= 42000; f += 1000)
+   {
+      distance += irDetect(irLedPin, irReceiverPin, f);
+   }
+   return distance;
+}
+
+// movement functions
+void forward()
+{
+ Serial.println("forward");
+ servoLeft.writeMicroseconds(1600);
+ servoRight.writeMicroseconds(1400);
+}
+
+void slightForward()
+{
+ servoLeft.writeMicroseconds(1600);
+ servoRight.writeMicroseconds(1400);
+ delay(100);
+}
+   
+void left()
+{
+  Serial.println("left");
+  servoLeft.writeMicroseconds(1400);
+  servoRight.writeMicroseconds(1400);
+  delay(285);
+}
+
+   
+void slightLeft()
+{
+  Serial.println("left");
+  servoLeft.writeMicroseconds(1500);
+  servoRight.writeMicroseconds(1400);
+  delay(20);
+}
+
+void right()
+  {
+  Serial.println("right");
+  servoLeft.writeMicroseconds(1600);
+  servoRight.writeMicroseconds(1600);
+  delay(280);
+}
+
+void slightRight()
+  {
+  Serial.println("right");
+  servoLeft.writeMicroseconds(1500);
+  servoRight.writeMicroseconds(1600);
+  delay(20);
+}
+
+
+void turn_around()
+{
+  Serial.println("turn_around");
+  servoLeft.writeMicroseconds(1400);
+  servoRight.writeMicroseconds(1400);
+  delay(1180);
+}
+
+void stop()
+{
+  Serial.println("stop");
+  servoLeft.writeMicroseconds(1500);
+  servoRight.writeMicroseconds(1500);
+}
