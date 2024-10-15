@@ -13,7 +13,12 @@ int leftDistance;
 int rightDistance;  
 int midDistance;    
 
-
+int turnCount;
+bool turnedAround = false;
+bool firstTimeRecorded = false;
+bool needSpin = false;
+long startTime;
+long firstTurnTime;
 
 
 void setup() {
@@ -29,97 +34,135 @@ void setup() {
   pinMode(rightReceiverPin, INPUT);          
   pinMode(rightIRPin, OUTPUT);              
   pinMode(rightLedPin, OUTPUT);
+
+
 }
 
 void loop() {
-int midDetected = irDetect(midIRPin, midReceiverPin, 38000);
-int leftDetected = irDetect(leftIRPin, leftReceiverPin, 38000);
-int rightDetected = irDetect(rightIRPin, rightReceiverPin, 38000);
+    int midDetected = irDetect(midIRPin, midReceiverPin, 38000);
+    int leftDetected = irDetect(leftIRPin, leftReceiverPin, 38000);
+    int rightDetected = irDetect(rightIRPin, rightReceiverPin, 38000);
 
 
-Serial.print("Middle Distance: ");
-int midDistance =irDistance(midIRPin, midReceiverPin);
-Serial.print(midDistance);
+    Serial.print("Middle Distance: ");
+    int midDistance =irDistance(midIRPin, midReceiverPin);
+    Serial.print(midDistance);
 
-Serial.print("Left Distance: ");
-int leftDistance =  irDistance(leftIRPin, leftReceiverPin);
-Serial.println(leftDistance);
+    Serial.print("Left Distance: ");
+    int leftDistance =  irDistance(leftIRPin, leftReceiverPin);
+    Serial.println(leftDistance);
 
-Serial.print("Right Distance: ");
-int rightDistance = irDistance(rightIRPin, rightReceiverPin);
-Serial.println(rightDistance);
+    Serial.print("Right Distance: ");
+    int rightDistance = irDistance(rightIRPin, rightReceiverPin);
+    Serial.println(rightDistance);
 
-forward();
+    forward();
+    startTime = millis();
 
-// slight adjustements while moving down hall
+    // slight adjustements while moving down hall
 
-if(rightDistance <=1){
-  slightLeft();
-}
-if(leftDistance <=1){
-  slightRight();
-}
-
-// come to a wall facing onwards
-if(midDistance <=4){
-  //the end when its trapped and needs to turn around
-  //if(leftDistance <=2 && rightDistance <=2){
-  //  turn_around();
-  //}
-  if(leftDistance <=2){
-    if (rightDistance <= 2){
-      turn_around();
+    if(rightDistance <=1) {
+      slightLeft();
     }
-    // theres a wall on the left and needs to turn right
-    right();
-    slightForward();
-    right();
-  }
-  else if(rightDistance <=2){
-    if (leftDistance <= 2){
-      turn_around();
+    if(leftDistance <=1) {
+      slightRight();
     }
-    // theres a wall on the right and needs to turn left
-    left();
-    slightForward();
-    left();
-  }
-  else{
-    // unknown circumstances
+
+    // come to a wall facing onwards
+    if(midDistance <=4) {
+        if (!firstTimeRecorded) {
+            firstTurnTime = millis();
+            firstTimeRecorded = true;
+        }
+      //the end when its trapped and needs to turn around
+      //if(leftDistance <=2 && rightDistance <=2){
+      //  turn_around();
+      //}
+        if(leftDistance <=2) {
+            if (rightDistance <= 2) {
+                turn_around();
+                turnedAround = true;
+            }
+            // theres a wall on the left and needs to turn right
+            right();
+            slightForward();
+            right();
+            if (turnedAround) {
+                turnCount--;
+            }
+            else{
+                turnCount++;
+            }
+            if (needSpin) {
+                spin();
+            }
+        }
+        else if(rightDistance <=2) {
+            if (leftDistance <= 2) {
+              turn_around();
+              turnedAround = true;
+            }
+            // theres a wall on the right and needs to turn left
+            left();
+            slightForward();
+            left();
+            if (turnedAround) {
+                turnCount--;
+            }
+            else {
+                turnCount++;
+            }
+            if (needSpin) {
+                spin();
+            }
+        }
+        else{
+            // unknown circumstances
+            stop();
+        }
+        if (turnCount == 0 && turnedAround){
+            lastStretch();
+        }
+    }
+}
+
+
+void lastStretch(){
+    long lastStretchTime = firstTurnTime - startTime;
+    forward();
+    delay(lastStretchTime);
     stop();
-  }
+    delay(100000);
 }
-}
-
 //detection functions
 
 
 int irDetect(int irLedPin,int irReceiverPin, long frequency)
 {
-  tone(irLedPin, frequency);                 // Turn on the IR LED square wave
-  delay(1);                                  // Wait 1 ms
-  noTone(irLedPin);                          // Turn off the IR LED
-  int ir = digitalRead(irReceiverPin);       // IR receiver -> ir variable
-  delay(1);                                  // Down time before recheck
-  return ir;                                 // Return 0 detect, 1 no detect
+    tone(irLedPin, frequency);                 // Turn on the IR LED square wave
+    delay(1);                                  // Wait 1 ms
+    noTone(irLedPin);                          // Turn off the IR LED
+    int ir = digitalRead(irReceiverPin);       // IR receiver -> ir variable
+    delay(1);                                  // Down time before recheck
+    return ir;                                 // Return 0 detect, 1 no detect
 }
 
 int irDistance(int irLedPin, int irReceiverPin)
 {
-   int distance = 0;
-   for(long f = 38000; f <= 42000; f += 1000)
-   {
-      distance += irDetect(irLedPin, irReceiverPin, f);
-   }
-   return distance;
+    int distance = 0;
+    for(long f = 38000; f <= 42000; f += 1000)
+    {
+       distance += irDetect(irLedPin, irReceiverPin, f);
+    }
+    return distance;
 }
 
 // movement functions
 void forward()
 {
- Serial.println("forward");
- servoLeft.writeMicroseconds(1600);
- servoRight.writeMicroseconds(1400);
+    Serial.println("forward");
+    servoLeft.writeMicroseconds(1600);
+    servoRight.writeMicroseconds(1400);
 }
 
 void slightForward()
@@ -131,49 +174,61 @@ void slightForward()
    
 void left()
 {
-  Serial.println("left");
-  servoLeft.writeMicroseconds(1400);
-  servoRight.writeMicroseconds(1400);
-  delay(285);
+    Serial.println("left");
+    servoLeft.writeMicroseconds(1400);
+    servoRight.writeMicroseconds(1400);
+    delay(285);
 }
 
    
 void slightLeft()
 {
-  Serial.println("left");
-  servoLeft.writeMicroseconds(1500);
-  servoRight.writeMicroseconds(1400);
-  delay(20);
+    Serial.println("left");
+    servoLeft.writeMicroseconds(1500);
+    servoRight.writeMicroseconds(1400);
+    delay(20);
 }
 
 void right()
-  {
-  Serial.println("right");
-  servoLeft.writeMicroseconds(1600);
-  servoRight.writeMicroseconds(1600);
-  delay(280);
+{
+    Serial.println("right");
+    servoLeft.writeMicroseconds(1600);
+    servoRight.writeMicroseconds(1600);
+    delay(280);
 }
 
 void slightRight()
-  {
-  Serial.println("right");
-  servoLeft.writeMicroseconds(1500);
-  servoRight.writeMicroseconds(1600);
-  delay(20);
+{
+    Serial.println("right");
+    servoLeft.writeMicroseconds(1500);
+    servoRight.writeMicroseconds(1600);
+    delay(20);
 }
 
 
 void turn_around()
 {
-  Serial.println("turn_around");
-  servoLeft.writeMicroseconds(1400);
-  servoRight.writeMicroseconds(1400);
-  delay(1180);
+    Serial.println("turn_around");
+    servoLeft.writeMicroseconds(1400);
+    servoRight.writeMicroseconds(1400);
+    delay(1180);
+    if (!turnedAround) {
+        needSpin = true;
+    }
+}
+
+void spin()
+{
+    Serial.println("Spinning");
+    servoLeft.writeMicroseconds(1400);
+    servoRight.writeMicroseconds(1400);
+    delay(4720);
+    needSpin = false;
 }
 
 void stop()
 {
-  Serial.println("stop");
-  servoLeft.writeMicroseconds(1500);
-  servoRight.writeMicroseconds(1500);
+    Serial.println("stop");
+    servoLeft.writeMicroseconds(1500);
+    servoRight.writeMicroseconds(1500);
 }
