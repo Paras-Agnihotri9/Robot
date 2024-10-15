@@ -83,18 +83,20 @@ void loop() {
                 turn_around();
                 turnedAround = true;
             }
-            // theres a wall on the left and needs to turn right
-            right();
-            slightForward();
-            right();
-            if (turnedAround) {
-                turnCount--;
-            }
-            else{
-                turnCount++;
-            }
-            if (needSpin) {
-                spin();
+            else {
+               // theres a wall on the left and needs to turn right
+              right();
+              slightForward();
+              right();
+              if (turnedAround) {
+                  turnCount--;
+              }
+              else{
+                  turnCount++;
+              }
+              if (needSpin) {
+                  spin();
+              }
             }
         }
         else if(rightDistance <=2) {
@@ -102,18 +104,20 @@ void loop() {
               turn_around();
               turnedAround = true;
             }
-            // theres a wall on the right and needs to turn left
-            left();
-            slightForward();
-            left();
-            if (turnedAround) {
-                turnCount--;
-            }
             else {
-                turnCount++;
-            }
-            if (needSpin) {
-                spin();
+              // theres a wall on the right and needs to turn left
+              left();
+              slightForward();
+              left();
+              if (turnedAround) {
+                  turnCount--;
+              }
+              else {
+                  turnCount++;
+              }
+              if (needSpin) {
+                  spin();
+              }
             }
         }
         else{
