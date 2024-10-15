@@ -126,7 +126,7 @@ void slightForward()
 {
  servoLeft.writeMicroseconds(1600);
  servoRight.writeMicroseconds(1400);
- delay(100);
+ delay(150);
 }
    
 void left()
