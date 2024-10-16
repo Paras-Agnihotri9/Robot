@@ -78,8 +78,8 @@ void loop() {
       //if(leftDistance <=2 && rightDistance <=2){
       //  turn_around();
       //}
-        if(leftDistance <=2) {
-            if (rightDistance <= 2) {
+        if(leftDistance <=3) {
+            if (rightDistance <= 3) {
                 turn_around();
                 turnedAround = true;
             }
@@ -99,8 +99,8 @@ void loop() {
               }
             }
         }
-        else if(rightDistance <=2) {
-            if (leftDistance <= 2) {
+        else if(rightDistance <=3) {
+            if (leftDistance <= 3) {
               turn_around();
               turnedAround = true;
             }
@@ -119,10 +119,6 @@ void loop() {
                   spin();
               }
             }
-        }
-        else{
-            // unknown circumstances
-            stop();
         }
         if (turnCount == 0 && turnedAround){
             lastStretch();
